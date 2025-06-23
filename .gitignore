@@ -1,0 +1,21 @@
+# Python virtual environment
+venv/
+*.venv/
+env/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# macOS system files
+.DS_Store
+
+# Output files from the bot
+*.png
+*.log
+
+# IDE-specific folders (optional but good practice)
+.vscode/
+.idea/
