@@ -2,6 +2,7 @@
 
 # Specifies where your source code is located.
 # This tells Pyright to look for imports inside the 'src' directory.
+[tool.pyright]
 include = ["src"]
 
 # Tells Pyright where to find the virtual environment.
