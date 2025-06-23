@@ -1,0 +1,15 @@
+# This is the main configuration file for Pyright.
+
+# Specifies where your source code is located.
+# This tells Pyright to look for imports inside the 'src' directory.
+include = ["src"]
+
+# Tells Pyright where to find the virtual environment.
+# "." means it will look for a 'venv' or '.venv' folder in the current directory.
+venvPath = "."
+venv = "venv"  # The name of your virtual environment folder.
+
+# --- Type Checking Off ---
+# The following setting disables all diagnostic rules related to type checking.
+# You will still get benefits like autocompletion and symbol detection.
+typeCheckingMode = "off"
