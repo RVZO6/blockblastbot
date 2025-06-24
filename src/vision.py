@@ -16,6 +16,39 @@ def _color_distance(rgb1, rgb2):
     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(rgb1, rgb2)]))
 
 
+def _analyze_cropped_block_image(cropped_image, bg_colors_rgb):
+    """
+    Analyzes a small, cropped image of a single block by sampling cell centers.
+    """
+    cropped_width, cropped_height = cropped_image.size
+    num_cols = round(cropped_width / config.BLOCK_CELL_SIZE)
+    num_rows = round(cropped_height / config.BLOCK_CELL_SIZE)
+
+    if num_rows == 0 or num_cols == 0:
+        return None
+
+    block_grid = [[" " for _ in range(num_cols)] for _ in range(num_rows)]
+    for r in range(num_rows):
+        for c in range(num_cols):
+            # Sample the center of the cell *within the cropped image*.
+            sample_x = (c * config.BLOCK_CELL_SIZE) + (config.BLOCK_CELL_SIZE // 2)
+            sample_y = (r * config.BLOCK_CELL_SIZE) + (config.BLOCK_CELL_SIZE // 2)
+
+            try:
+                pixel_color = cropped_image.getpixel((sample_x, sample_y))
+                is_background = any(
+                    _color_distance(pixel_color, bg) < config.BLOCK_COLOR_TOLERANCE
+                    for bg in bg_colors_rgb
+                )
+                if not is_background:
+                    block_grid[r][c] = "X"
+            except IndexError:
+                # This can happen if the cell size doesn't perfectly fit the crop.
+                continue
+
+    return block_grid
+
+
 def analyze_grid_from_image(image):
     """Analyzes the 8x8 game grid from a captured image."""
     grid = [[" " for _ in range(8)] for _ in range(8)]
@@ -46,7 +79,7 @@ def analyze_grid_from_image(image):
 def analyze_available_blocks(image):
     """
     Analyzes and identifies the three available block shapes using the
-    user's improved "find bounds, crop, and analyze" method.
+    improved "find bounds, crop, and analyze" method.
     """
     detected_blocks = []
     bg_colors_rgb = [_hex_to_rgb(c) for c in config.BLOCK_BG_COLORS_HEX]
@@ -100,38 +133,11 @@ def analyze_available_blocks(image):
             continue
 
         # 2. Crop the image to the exact bounding box of the block.
-        # The crop region is (left, upper, right, lower).
         cropped_image = image.crop((min_x, min_y, max_x + 1, max_y + 1))
 
-        # 3. Determine the grid size of the cropped image.
-        cropped_width, cropped_height = cropped_image.size
-        num_cols = round(cropped_width / config.BLOCK_CELL_SIZE)
-        num_rows = round(cropped_height / config.BLOCK_CELL_SIZE)
-
-        if num_rows == 0 or num_cols == 0:
-            detected_blocks.append(None)
-            continue
-
-        # 4. Analyze this small, cropped image as if it were the main grid.
-        block_grid = [[" " for _ in range(num_cols)] for _ in range(num_rows)]
-        for r in range(num_rows):
-            for c in range(num_cols):
-                # Sample the center of the cell *within the cropped image*.
-                sample_x = (c * config.BLOCK_CELL_SIZE) + (config.BLOCK_CELL_SIZE // 2)
-                sample_y = (r * config.BLOCK_CELL_SIZE) + (config.BLOCK_CELL_SIZE // 2)
-
-                try:
-                    pixel_color = cropped_image.getpixel((sample_x, sample_y))
-                    is_background = any(
-                        _color_distance(pixel_color, bg) < config.BLOCK_COLOR_TOLERANCE
-                        for bg in bg_colors_rgb
-                    )
-                    if not is_background:
-                        block_grid[r][c] = "X"
-                except IndexError:
-                    # This can happen if the cell size doesn't perfectly fit the crop.
-                    continue
-
+        # 3. Analyze this small, cropped image using the dedicated helper function.
+        block_grid = _analyze_cropped_block_image(cropped_image, bg_colors_rgb)
         detected_blocks.append(block_grid)
 
     return detected_blocks
+

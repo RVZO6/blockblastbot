@@ -11,12 +11,9 @@ build-backend = "setuptools.build_meta"
 name = "blockblast-bot"
 version = "0.1.0"
 description = "A Python bot to automate playing the Block Blast game using native screen capture on macOS."
-readme = "README.md" # Assumes you will create a README file later
+readme = "README.md"                                                                                        # Assumes you will create a README file later
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [
-  { name = "Your Name", email = "you@example.com" }, # Replace with your details
-]
 
 # --- Project Dependencies ---
 # This is where you list the packages your bot needs to run.

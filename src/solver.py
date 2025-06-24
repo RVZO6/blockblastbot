@@ -45,7 +45,7 @@ def _calculate_score_and_clear_lines(board):
     return score, new_board
 
 
-# --- New, More Flexible Solver ---
+# --- New, More Flexible Solver (with simplified recursion) ---
 
 
 def _solve_recursively(board, ordered_blocks):
@@ -80,7 +80,7 @@ def _solve_recursively(board, ordered_blocks):
                 board_after_clear, remaining_blocks
             )
 
-            # If the recursive call failed (e.g., couldn't place a block), skip this path.
+            # If the recursive call failed (couldn't place a subsequent block), this path is invalid.
             if future_placements is None:
                 continue
 
@@ -91,24 +91,11 @@ def _solve_recursively(board, ordered_blocks):
                 # Prepend the current move to the placements from the future moves.
                 best_path_placements = [(r, c)] + future_placements
 
-    # If no valid placement was found for this block, this path is impossible.
+    # If best_path_placements is still None, it means no valid placement
+    # for the current block allowed the rest of the sequence to complete.
+    # Therefore, this entire path for the given block order is impossible.
     if best_path_placements is None:
-        # Check if we can proceed with a zero-score default move.
-        # This handles cases where a block must be placed but scores no points.
-        # For simplicity, we'll find the first valid spot.
-        for r in range(9 - len(current_block)):
-            for c in range(9 - len(current_block[0])):
-                if _is_valid_placement(board, current_block, (r, c)):
-                    board_after_place = _place_block(board, current_block, (r, c))
-                    _, board_after_clear = _calculate_score_and_clear_lines(
-                        board_after_place
-                    )
-                    score_from_future, future_placements = _solve_recursively(
-                        board_after_clear, remaining_blocks
-                    )
-                    if future_placements is not None:
-                        return score_from_future, [(r, c)] + future_placements
-        return -1, None  # Truly impossible path
+        return -1, None
 
     return best_path_score, best_path_placements
 
@@ -143,3 +130,4 @@ def find_best_move_sequence(board, blocks):
             best_result["placements"] = final_placements
 
     return best_result if best_result["score"] > -1 else None
+
