@@ -1,5 +1,4 @@
 # capture.py
-
 import subprocess
 import sys
 import tempfile
