@@ -1,0 +1,4 @@
+Pillow
+
+[:sys_platform == "darwin"]
+pyobjc-framework-quartz

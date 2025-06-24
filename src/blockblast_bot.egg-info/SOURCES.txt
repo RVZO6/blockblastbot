@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+src/blockblast_bot.egg-info/PKG-INFO
+src/blockblast_bot.egg-info/SOURCES.txt
+src/blockblast_bot.egg-info/dependency_links.txt
+src/blockblast_bot.egg-info/requires.txt
+src/blockblast_bot.egg-info/top_level.txt
