@@ -19,3 +19,6 @@ __pycache__/
 # IDE-specific folders (optional but good practice)
 .vscode/
 .idea/
+
+# uv files
+.uv.lock
