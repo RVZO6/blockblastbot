@@ -1,16 +1,77 @@
-# This is the main configuration file for Pyright.
+# pyproject.toml
 
-# Specifies where your source code is located.
-# This tells Pyright to look for imports inside the 'src' directory.
+# This section defines the build system requirements.
+# It tells tools like pip how to build your project.
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# This section contains the core metadata for your project.
+# It replaces the need for most of setup.py.
+[project]
+name = "my-awesome-project"
+version = "0.1.0"
+description = "A short description of my project."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+# List your project's main dependencies here.
+# These are the packages your project needs to run.
+dependencies = [
+  "numpy",  # Example dependency
+  "pandas", # Example dependency
+]
+
+# Optional dependencies are for specific features.
+# For example, 'dev' dependencies are only for development (testing, linting, etc.).
+# Install them with: pip install .[dev]
+[project.optional-dependencies]
+dev = [
+  "ruff",    # Linter and formatter
+  "pyright", # Type checker
+]
+
+
+# -------------------------------------------------------------------
+# TOOL CONFIGURATION
+# -------------------------------------------------------------------
+
+# Configuration for Ruff (https://docs.astral.sh/ruff/)
+# A super-fast linter and formatter that can replace flake8, isort, and more.
+[tool.ruff]
+# Set the maximum line length.
+line-length = 88
+# Assume Python 3.11 compatibility.
+target-version = "py311"
+
+[tool.ruff.lint]
+# Select the rule codes to enable. 'E' and 'F' are standard pyflakes/pycodestyle rules.
+# 'I' is for isort (import sorting). 'UP' is for pyupgrade.
+select = ["E", "F", "W", "I", "UP"]
+
+# Configuration for Pyright (https://github.com/microsoft/pyright)
+# The static type checker from Microsoft.
 [tool.pyright]
-include = ["src"]
+# Define where your source code is located.
+# If your code is in a 'src' directory, you would use: include = ["src"]
+include = ["."]
 
-# Tells Pyright where to find the virtual environment.
-# "." means it will look for a 'venv' or '.venv' folder in the current directory.
-venvPath = "."
-venv = "venv"  # The name of your virtual environment folder.
+# Define paths to exclude from type checking.
+exclude = ["**/node_modules", "**/__pycache__", "src/experimental/", ".venv"]
 
-# --- Type Checking Off ---
-# The following setting disables all diagnostic rules related to type checking.
-# You will still get benefits like autocompletion and symbol detection.
+# Set the Python version you are targeting.
+pythonVersion = "3.11"
+# The level of strictness for the type checking.
+# Options: "basic", "standard", "strict"
 typeCheckingMode = "off"
+
+# Reports attempts to use a variable that is not declared.
+reportUnboundVariable = "warning"
+# Reports attempts to use a module that is not imported.
+reportMissingImports = "warning"
