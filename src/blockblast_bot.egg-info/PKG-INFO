@@ -9,5 +9,6 @@ Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 Requires-Dist: Pillow
 Requires-Dist: pyobjc-framework-quartz; sys_platform == "darwin"
+Requires-Dist: pyautogui
 
 wip

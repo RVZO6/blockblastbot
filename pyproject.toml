@@ -21,6 +21,7 @@ dependencies = [
   "Pillow",
   # This dependency is marked as only being required on macOS ('darwin').
   "pyobjc-framework-quartz; sys_platform == 'darwin'",
+  "pyautogui",
 ]
 
 # Optional: Add links to your GitHub repository.
