@@ -1,5 +1,4 @@
-# capture.py
-
+# src/capture.py
 import subprocess
 import sys
 import tempfile
@@ -43,9 +42,8 @@ def capture_window_as_pil():
         try:
             subprocess.run(command, check=True, capture_output=True)
             image = Image.open(temp_file.name)
-            return image.convert(
-                "RGB"
-            )  # Convert to standard RGB to handle transparency
+            return image.convert("RGB")
         except Exception as e:
             print(f"Error during screenshot: {e}", file=sys.stderr)
             return None
+
