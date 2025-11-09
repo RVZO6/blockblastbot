@@ -196,13 +196,11 @@ def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution
                 for placement in current_placements:
                     temp_grid = _place_block(temp_grid, blocks[placement.block_id], placement.row, placement.col)
                 
-                _, final_grid_after_clearing = _calculate_score_and_clear_lines(temp_grid) # Get the grid after clearing
-                
+                _, final_grid_after_clearing = _calculate_score_and_clear_lines(temp_grid)
+
                 best_overall_solution = Solution(
                     placements=current_placements,
                     lines_cleared=max_overall_lines_cleared,
-                    final_grid=final_grid_after_clearing # Correctly assign the cleared grid
+                    final_grid=final_grid_after_clearing
                 )
-    
-    # The final_grid is already set correctly within the loop, no need for a second pass
     return best_overall_solution

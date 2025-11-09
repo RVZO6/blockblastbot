@@ -1,4 +1,3 @@
-
 GRID_CELL_SIZE_REL: float = 0.1102  # Relative to window width
 GRID_EMPTY_COLOR: tuple[int, int, int] = (31, 34, 69)  # RGB for #1F2245
 GRID_COLOR_TOLERANCE: int = 40

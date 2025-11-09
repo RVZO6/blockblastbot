@@ -1,7 +1,6 @@
 """Main script to solve and execute block puzzle."""
 
 import src.vision as vision
-import src.util as util
 import src.automation as automation
 from src.solver import solve
 from config import BLOCK_INDICES
