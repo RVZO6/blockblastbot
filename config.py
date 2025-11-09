@@ -21,8 +21,10 @@ BLOCK_ROI_REL_RADIUS: float = (
     0.15  # Relative radius for block ROI (10% of window width)
 )
 
-# Normalized slope for Y-axis drag (pixels/row per unit height)
-NORMALIZED_Y_SLOPE: float = 0.035
+# Data-driven parameters for swipe physics
+NORMALIZED_Y_SLOPE: float = 0.04319
+BASE_X_GAIN: float = 1.379
+BASE_Y_INTERCEPT_NORMALIZED: float = -0.0066
 
 # Grid size
 GRID_SIZE: int = 8

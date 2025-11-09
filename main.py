@@ -2,6 +2,7 @@
 
 import src.vision as vision
 import src.util as util
+import src.automation as automation
 from src.solver import solve
 from config import BLOCK_INDICES
 
@@ -47,7 +48,15 @@ def main() -> None:
     for row in solution.final_grid:
         print(row)
 
-    print("\nReady to execute! (execution not yet implemented)")
+    print("\nReady to execute solution.")
+    try:
+        if input("Press Enter to execute swipes, or Ctrl+C to cancel: ").strip() == "":
+            automation.execute_solution(solution, available_blocks)
+            print("\nExecution complete.")
+        else:
+            print("\nExecution cancelled by user.")
+    except KeyboardInterrupt:
+        print("\nExecution cancelled by user.")
 
 
 if __name__ == "__main__":
