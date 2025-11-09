@@ -5,58 +5,60 @@ import src.util as util
 import src.automation as automation
 from src.solver import solve
 from config import BLOCK_INDICES
+import time
 
 
 def main() -> None:
     """Main execution loop."""
-    print("Capturing game state...")
+    print("--- Block Redo Automation ---")
+    print("This script will run in a loop, solving and executing puzzles.")
 
-    # Get current grid state
-    current_grid = vision.grid()
-    print("\nCurrent Grid:")
-    for row in current_grid:
-        print(row)
-
-    # Get available blocks
-    available_blocks = vision.blocks(list(BLOCK_INDICES))
-    print(f"\nAvailable Blocks: {list(available_blocks.keys())}")
-    for block_id, block_data in available_blocks.items():
-        print(f"\nBlock {block_id}:")
-        for row in block_data:
-            print(row)
-
-    if not available_blocks:
-        print("\nNo blocks available!")
-        return
-
-    # Solve for best placement
-    print("\nSolving...")
-    solution = solve(current_grid, available_blocks)
-
-    if solution is None:
-        print("No valid solution found!")
-        return
-
-    print(f"\nSolution found! Lines cleared: {solution.lines_cleared}")
-    print("\nPlacements:")
-    for placement in solution.placements:
-        print(
-            f"  Block {placement.block_id} at row={placement.row}, col={placement.col}"
-        )
-
-    print("\nFinal Grid:")
-    for row in solution.final_grid:
-        print(row)
-
-    print("\nReady to execute solution.")
     try:
-        if input("Press Enter to execute swipes, or Ctrl+C to cancel: ").strip() == "":
+        if input("Press Enter to begin the loop, or Ctrl+C to cancel: ").strip() != "":
+            print("\nExiting.")
+            return
+    except KeyboardInterrupt:
+        print("\nExiting.")
+        return
+
+    try:
+        while True:
+            print("\n-------------------------")
+            print("Capturing game state...")
+
+            # Get current grid state
+            current_grid = vision.grid()
+            print("\nCurrent Grid:")
+            for row in current_grid:
+                print(row)
+
+            # Get available blocks
+            available_blocks = vision.blocks(list(BLOCK_INDICES))
+            print(f"\nAvailable Blocks: {list(available_blocks.keys())}")
+            if not available_blocks:
+                print("\nNo blocks available! Retrying in 5 seconds...")
+                time.sleep(5)
+                continue
+
+            # Solve for best placement
+            print("\nSolving...")
+            solution = solve(current_grid, available_blocks)
+
+            if solution is None:
+                print("No valid solution found! Retrying in 5 seconds...")
+                time.sleep(5)
+                continue
+
+            print(f"\nSolution found! Lines cleared: {solution.lines_cleared}")
+            print("Executing solution...")
             automation.execute_solution(solution, available_blocks)
             print("\nExecution complete.")
-        else:
-            print("\nExecution cancelled by user.")
+
+            print("Waiting for next cycle...")
+            time.sleep(0.85)
+
     except KeyboardInterrupt:
-        print("\nExecution cancelled by user.")
+        print("\nLoop stopped by user. Exiting.")
 
 
 if __name__ == "__main__":

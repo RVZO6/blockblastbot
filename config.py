@@ -1,5 +1,4 @@
-# Relative grid positions (calculated on Pixel 7 Pro screenshot 1080x2340, adjusted for 3.43% top crop)
-GRID_TOP_LEFT_REL: tuple[float, float] = (0.0583, 0.2084)  # (left_rel, top_rel)
+
 GRID_CELL_SIZE_REL: float = 0.1102  # Relative to window width
 GRID_EMPTY_COLOR: tuple[int, int, int] = (31, 34, 69)  # RGB for #1F2245
 GRID_COLOR_TOLERANCE: int = 40
@@ -22,9 +21,9 @@ BLOCK_ROI_REL_RADIUS: float = (
 )
 
 # Data-driven parameters for swipe physics
-NORMALIZED_Y_SLOPE: float = 0.04319
-BASE_X_GAIN: float = 1.379
-BASE_Y_INTERCEPT_NORMALIZED: float = -0.0066
+NORMALIZED_Y_SLOPE: float = 0.011
+BASE_X_GAIN: float = 1.37
+BASE_Y_INTERCEPT_NORMALIZED: float = 0.028
 
 # Grid size
 GRID_SIZE: int = 8

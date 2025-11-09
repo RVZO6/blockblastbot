@@ -1,6 +1,7 @@
 import subprocess
 from PIL import Image
 from io import BytesIO
+import math
 
 
 def adb(*args: str) -> bytes:
@@ -21,9 +22,23 @@ def adb(*args: str) -> bytes:
 
 
 def swipe(x1: int, y1: int, x2: int, y2: int) -> str:
-    """Swipe from (x1, y1) to (x2, y2) with 150ms duration"""
+    """
+    Swipe from (x1, y1) to (x2, y2) with a duration based on distance.
+    """
+    distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    # Linearly scale duration: base 100ms, plus 0.1ms per pixel
+    duration_ms = 100 + int(distance * 0.3)
     return (
-        adb("shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), "250")
+        adb(
+            "shell",
+            "input",
+            "swipe",
+            str(x1),
+            str(y1),
+            str(x2),
+            str(y2),
+            str(duration_ms),
+        )
         .decode("utf-8")
         .strip()
     )

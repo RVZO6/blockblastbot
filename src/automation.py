@@ -1,8 +1,5 @@
 """
 Module for calculating and executing swipe automation.
-
-When run directly, this script will execute a series of demonstration swipes
-to allow for visual verification of the swipe physics and calculations.
 """
 
 import time
@@ -173,44 +170,5 @@ def execute_solution(
             f"  Swiping Block {block_id} ({width}x{height}) to ({placement.row}, {placement.col})..."
         )
         util.swipe(x1, y1, x2, y2)
-        time.sleep(0.5)  # Pause briefly between swipes
+        time.sleep(0.05)  # Pause briefly between swipes
 
-
-if __name__ == "__main__":
-    # This allows the script to be run directly for demonstration/testing
-    import sys
-    import os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    
-    print("--- Block Redo Automation Demonstration ---")
-    print("This script will perform a series of swipes on your connected device.")
-    print("Ensure the game is open and you are on the main puzzle screen.")
-    try:
-        input("Press Enter to begin the demonstration...")
-    except KeyboardInterrupt:
-        print("\nDemonstration cancelled.")
-        exit()
-
-    # --- Define Demonstration Data ---
-    # Using a variety of shapes and positions
-    demo_blocks = {
-        1: [[1, 1, 1]],  # 3x1, left slot
-        2: [[1, 0], [1, 1]],  # L-shape, center slot
-        3: [[1], [1]],  # 1x2, right slot
-    }
-
-    demo_placements = [
-        # Move the 3x1 block from the left slot to the top-left corner
-        Placement(block_id=1, row=0, col=0),
-        # Move the L-shape from the center to the middle of the board
-        Placement(block_id=2, row=3, col=3),
-        # Move the 1x2 block from the right to the bottom-right corner
-        Placement(block_id=3, row=6, col=7),
-    ]
-
-    # Create a fake solution object
-    demo_solution = Solution(placements=demo_placements, lines_cleared=0, final_grid=[])
-
-    print("\nStarting demonstration...\n")
-    execute_solution(demo_solution, demo_blocks)
-    print("\n--- Demonstration Complete ---")

@@ -167,14 +167,11 @@ def _solve_recursively(
 
 def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution | None:
     """
-    Find the best placement of blocks to maximize line clears, ensuring all blocks are placed.
+    Find the best placement of blocks to maximize line clears.
 
-    Args:
-        grid: Initial grid state (8x8)
-        blocks: Dictionary of blocks to place (block_id -> block_shape)
-
-    Returns:
-        Best solution found, or None if no valid placement for all blocks exists.
+    This function exhaustively checks every possible order (permutation) of the
+    available blocks to find the sequence of placements that yields the highest
+    score, ensuring all blocks are placed.
     """
     best_overall_solution: Solution | None = None
     max_overall_lines_cleared = -1
