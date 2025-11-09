@@ -96,7 +96,9 @@ def _calculate_score_and_clear_lines(
     lines_cleared = 0
 
     # Clear complete rows
-    rows_to_clear = [r for r, row in enumerate(new_grid) if all(cell == 1 for cell in row)]
+    rows_to_clear = [
+        r for r, row in enumerate(new_grid) if all(cell == 1 for cell in row)
+    ]
     for r in rows_to_clear:
         new_grid[r] = [0] * 8
         lines_cleared += 1
@@ -142,8 +144,8 @@ def _solve_recursively(
         for c in range(8 - len(block_shape[0]) + 1):
             if _is_valid_placement(current_grid, block_shape, r, c):
                 grid_after_placement = _place_block(current_grid, block_shape, r, c)
-                score_from_this_move, grid_after_clear = _calculate_score_and_clear_lines(
-                    grid_after_placement
+                score_from_this_move, grid_after_clear = (
+                    _calculate_score_and_clear_lines(grid_after_placement)
                 )
 
                 # Recursively solve for the remaining blocks
@@ -151,7 +153,9 @@ def _solve_recursively(
 
                 if future_result is not None:
                     score_from_future_moves, future_placements = future_result
-                    current_path_total_score = score_from_this_move + score_from_future_moves
+                    current_path_total_score = (
+                        score_from_this_move + score_from_future_moves
+                    )
 
                     if current_path_total_score > best_score_for_this_path:
                         best_score_for_this_path = current_path_total_score
@@ -177,7 +181,7 @@ def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution
     max_overall_lines_cleared = -1
 
     block_ids = list(blocks.keys())
-    
+
     # Iterate through all permutations of block placement order
     for p_ids in itertools.permutations(block_ids):
         ordered_blocks_with_ids = [(block_id, blocks[block_id]) for block_id in p_ids]
@@ -190,17 +194,25 @@ def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution
 
             if current_lines_cleared > max_overall_lines_cleared:
                 max_overall_lines_cleared = current_lines_cleared
-                
+
                 # Apply placements to get the final grid for this solution
                 temp_grid = deepcopy(grid)
                 for placement in current_placements:
-                    temp_grid = _place_block(temp_grid, blocks[placement.block_id], placement.row, placement.col)
-                
-                _, final_grid_after_clearing = _calculate_score_and_clear_lines(temp_grid)
+                    temp_grid = _place_block(
+                        temp_grid,
+                        blocks[placement.block_id],
+                        placement.row,
+                        placement.col,
+                    )
+
+                _, final_grid_after_clearing = _calculate_score_and_clear_lines(
+                    temp_grid
+                )
 
                 best_overall_solution = Solution(
                     placements=current_placements,
                     lines_cleared=max_overall_lines_cleared,
-                    final_grid=final_grid_after_clearing
+                    final_grid=final_grid_after_clearing,
                 )
     return best_overall_solution
+
