@@ -5,201 +5,212 @@ from typing import cast
 
 from PIL import Image
 
-import src.util as util
+import src.device as device
 from config import (
-    BLOCK_BG_COLORS,
-    BLOCK_CELL_SIZE_REL,
-    BLOCK_CENTERS_REL,
+    BLOCK_BACKGROUND_COLORS,
+    BLOCK_CELL_SIZE_NORMALIZED,
+    BLOCK_CENTERS_NORMALIZED,
     BLOCK_COLOR_TOLERANCE,
     BLOCK_INDICES,
-    BLOCK_ROI_REL_RADIUS,
-    GRID_CELL_SIZE_REL,
+    BLOCK_ROI_RADIUS_NORMALIZED,
+    GRID_CELL_SIZE_NORMALIZED,
     GRID_EMPTY_COLOR,
     GRID_COLOR_TOLERANCE,
-    GRID_LEFT_REL,
+    GRID_LEFT_NORMALIZED,
     GRID_SIZE,
-    GRID_TOP_REL,
+    GRID_TOP_NORMALIZED,
 )
 
 
-def color_distance(c1: tuple[int, int, int], c2: tuple[int, int, int]) -> float:
+def color_distance(
+    color1: tuple[int, int, int], color2: tuple[int, int, int]
+) -> float:
     """Calculate Euclidean distance between two RGB colors."""
-    return math.sqrt((c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2)
+    return math.sqrt(
+        (color1[0] - color2[0]) ** 2
+        + (color1[1] - color2[1]) ** 2
+        + (color1[2] - color2[2]) ** 2
+    )
 
 
 def grid() -> list[list[int]]:
     """
-    Get the current grid state from screenshot.
+    Captures a screenshot and analyzes it to determine the current state
+    of the game grid.
+
+    Each cell in the 8x8 grid is identified as either empty (0) or occupied (1)
+    based on its color.
 
     Returns:
-        8x8 2D list representing occupied (1) and empty (0) cells
+        A 2D list (8x8) representing the grid, where 0 is an empty cell
+        and 1 is an occupied cell.
     """
-    data: list[list[int]] = []
-    img = util.screenshot()
-    grid_img = img.crop(
-        (
-            int(img.width * GRID_LEFT_REL),
-            int(img.height * GRID_TOP_REL),
-            int(img.width * (GRID_LEFT_REL + GRID_CELL_SIZE_REL * GRID_SIZE)),
-            int(img.height * GRID_TOP_REL + img.width * GRID_CELL_SIZE_REL * GRID_SIZE),
-        )
+    grid_state: list[list[int]] = []
+    screenshot_image = device.screenshot()
+
+    # Define the grid's pixel boundaries
+    grid_left_px = int(screenshot_image.width * GRID_LEFT_NORMALIZED)
+    grid_top_px = int(screenshot_image.height * GRID_TOP_NORMALIZED)
+    grid_width_px = int(screenshot_image.width * GRID_CELL_SIZE_NORMALIZED * GRID_SIZE)
+    grid_height_px = int(
+        screenshot_image.width * GRID_CELL_SIZE_NORMALIZED * GRID_SIZE
+    )  # Note: width-based for square cells
+    grid_right_px = grid_left_px + grid_width_px
+    grid_bottom_px = grid_top_px + grid_height_px
+
+    grid_image = screenshot_image.crop(
+        (grid_left_px, grid_top_px, grid_right_px, grid_bottom_px)
     )
-    cell_size = grid_img.width / GRID_SIZE
+    cell_size_px = grid_image.width / GRID_SIZE
 
     for i in range(GRID_SIZE):
-        row: list[int] = []
+        row_state: list[int] = []
         for j in range(GRID_SIZE):
-            # Calculate center point of cell
-            center_x = int((j + 0.5) * cell_size)
-            center_y = int((i + 0.5) * cell_size)
+            # Calculate the center point of the cell to sample its color
+            center_x_px = int((j + 0.5) * cell_size_px)
+            center_y_px = int((i + 0.5) * cell_size_px)
 
-            # Get pixel color at center (RGBA format)
-            pixel = cast(
-                tuple[int, int, int, int], grid_img.getpixel((center_x, center_y))
+            pixel_rgba = cast(
+                tuple[int, int, int, int], grid_image.getpixel((center_x_px, center_y_px))
             )
-            rgb: tuple[int, int, int] = (pixel[0], pixel[1], pixel[2])
+            pixel_rgb = (pixel_rgba[0], pixel_rgba[1], pixel_rgba[2])
 
-            # Check if it's close to background color
-            if color_distance(rgb, GRID_EMPTY_COLOR) < GRID_COLOR_TOLERANCE:
-                row.append(0)
+            # Check if the cell's color is close to the empty color
+            if color_distance(pixel_rgb, GRID_EMPTY_COLOR) < GRID_COLOR_TOLERANCE:
+                row_state.append(0)  # Empty
             else:
-                row.append(1)
-        data.append(row)
+                row_state.append(1)  # Occupied
+        grid_state.append(row_state)
 
-    return data
+    return grid_state
 
 
 def blocks(indices: list[int] | int) -> dict[int, list[list[int]]]:
     """
-    Get the grid data for one or more selection blocks.
+    Detects and extracts the shapes of one or more blocks from the
+    block selection area of the screen.
 
     Args:
-        indices: Single block index (1, 2, or 3) or list of indices
+        indices: A single block index (1, 2, or 3) or a list of indices
+                 for the blocks to detect.
 
     Returns:
-        Dictionary mapping block index to its 2D grid data.
-        Only includes blocks that were successfully detected.
+        A dictionary where keys are block indices (int) and values are
+        their corresponding 2D shapes (list of lists of int). Only blocks
+        that are successfully detected will be included.
 
     Raises:
-        ValueError: If any index is not 1, 2, or 3
+        ValueError: If any provided index is not 1, 2, or 3.
     """
-    # Normalize input to list
     if isinstance(indices, int):
         indices = [indices]
 
-    # Validate all indices
+    if not all(index in BLOCK_INDICES for index in indices):
+        raise ValueError(f"Block index must be in {BLOCK_INDICES}, got {indices}")
+
+    # A single screenshot is used to detect all requested blocks for efficiency.
+    screenshot_image = util.screenshot()
+
+    detected_blocks: dict[int, list[list[int]]] = {}
     for index in indices:
-        if index not in BLOCK_INDICES:
-            raise ValueError(f"Block index must be in {BLOCK_INDICES}, got {index}")
+        block_data = _extract_block_from_image(screenshot_image, index)
+        if block_data:
+            detected_blocks[index] = block_data
 
-    # Take single screenshot for all blocks
-    img = util.screenshot()
-
-    result: dict[int, list[list[int]]] = {}
-
-    for index in indices:
-        block_data = _extract_block_from_image(img, index)
-        if block_data is not None:
-            result[index] = block_data
-
-    return result
+    return detected_blocks
 
 
-def _extract_block_from_image(img: Image.Image, index: int) -> list[list[int]] | None:
+def _extract_block_from_image(
+    screenshot: Image.Image, index: int
+) -> list[list[int]] | None:
     """
-    Extract block grid data from a screenshot image.
+    Extracts a single block's shape data from a full screenshot.
+
+    This function crops a Region of Interest (ROI) around the expected
+    position of a block, then identifies the block's pixels within that
+    ROI, and finally converts the pixel data into a 2D grid representing
+    the block's shape.
 
     Args:
-        img: PIL Image of the screenshot
-        index: Block index (1, 2, or 3)
+        screenshot: The PIL Image object of the entire screen.
+        index: The slot index of the block (1, 2, or 3) to extract.
 
     Returns:
-        2D list representing the block's occupied cells (1) and empty cells (0),
-        or None if no block is found at this position
+        A 2D list of integers (1s for block pixels, 0s for empty) representing
+        the block's shape, or None if no block is detected at the specified
+        position.
     """
+    center_normalized = BLOCK_CENTERS_NORMALIZED[index - 1]
+    center_x_px = int(screenshot.width * center_normalized[0])
+    center_y_px = int(screenshot.height * center_normalized[1])
 
-    # Get block center based on index
-    center_rel = BLOCK_CENTERS_REL[index - 1]
-    center_x = int(img.width * center_rel[0])
-    center_y = int(img.height * center_rel[1])
+    # Define a Region of Interest (ROI) around the block's expected center
+    roi_radius_px = int(screenshot.width * BLOCK_ROI_RADIUS_NORMALIZED)
+    roi_left = max(0, center_x_px - roi_radius_px)
+    roi_top = max(0, center_y_px - roi_radius_px)
+    roi_right = min(screenshot.width, center_x_px + roi_radius_px)
+    roi_bottom = min(screenshot.height, center_y_px + roi_radius_px)
 
-    # Calculate ROI around block center
-    roi_radius = int(img.width * BLOCK_ROI_REL_RADIUS)
-    roi_left = max(0, center_x - roi_radius)
-    roi_top = max(0, center_y - roi_radius)
-    roi_right = min(img.width, center_x + roi_radius)
-    roi_bottom = min(img.height, center_y + roi_radius)
+    roi_image = screenshot.crop((roi_left, roi_top, roi_right, roi_bottom))
 
-    # Crop to ROI
-    roi_img = img.crop((roi_left, roi_top, roi_right, roi_bottom))
-
-    # Find bounding box of non-background pixels
-    min_x, min_y = roi_img.width, roi_img.height
+    # Find the bounding box of non-background pixels to isolate the block
+    min_x, min_y = roi_image.width, roi_image.height
     max_x, max_y = 0, 0
+    has_block_pixels = False
 
-    for y in range(roi_img.height):
-        for x in range(roi_img.width):
-            pixel = cast(tuple[int, int, int, int], roi_img.getpixel((x, y)))
-            rgb: tuple[int, int, int] = (pixel[0], pixel[1], pixel[2])
+    for y in range(roi_image.height):
+        for x in range(roi_image.width):
+            pixel_rgba = cast(tuple[int, int, int, int], roi_image.getpixel((x, y)))
+            pixel_rgb = (pixel_rgba[0], pixel_rgba[1], pixel_rgba[2])
 
-            # Check if pixel is NOT background
             is_background = any(
-                color_distance(rgb, bg_color) < BLOCK_COLOR_TOLERANCE
-                for bg_color in BLOCK_BG_COLORS
+                color_distance(pixel_rgb, bg_color) < BLOCK_COLOR_TOLERANCE
+                for bg_color in BLOCK_BACKGROUND_COLORS
             )
 
             if not is_background:
+                has_block_pixels = True
                 min_x = min(min_x, x)
                 min_y = min(min_y, y)
                 max_x = max(max_x, x)
                 max_y = max(max_y, y)
 
-    # Check if any non-background pixels were found
-    if max_x == 0 and max_y == 0:
-        # No block found at this position
-        return None
+    if not has_block_pixels:
+        return None  # No block found at this position
 
-    # Crop to bounding box
-    block_img = roi_img.crop((min_x, min_y, max_x + 1, max_y + 1))
+    # Crop the ROI to the actual block shape
+    block_image = roi_image.crop((min_x, min_y, max_x + 1, max_y + 1))
 
-    # Determine block dimensions based on cell size
-    cell_size = img.width * BLOCK_CELL_SIZE_REL
-    cols = round(block_img.width / cell_size)
-    rows = round(block_img.height / cell_size)
+    # Determine block dimensions in cells
+    cell_size_px = screenshot.width * BLOCK_CELL_SIZE_NORMALIZED
+    cols = round(block_image.width / cell_size_px)
+    rows = round(block_image.height / cell_size_px)
 
-    # Sanity check - if dimensions are invalid, return None
     if cols <= 0 or rows <= 0:
-        return None
+        return None  # Invalid dimensions
 
-    # Extract grid data
-    data: list[list[int]] = []
-    actual_cell_width = block_img.width / cols
-    actual_cell_height = block_img.height / rows
+    # Sample the center of each cell to determine if it's part of the block
+    block_shape: list[list[int]] = []
+    cell_width_px = block_image.width / cols
+    cell_height_px = block_image.height / rows
 
     for i in range(rows):
-        row: list[int] = []
+        row_shape: list[int] = []
         for j in range(cols):
-            # Calculate center point of cell
-            center_x_cell = int((j + 0.5) * actual_cell_width)
-            center_y_cell = int((i + 0.5) * actual_cell_height)
+            center_x_cell = int((j + 0.5) * cell_width_px)
+            center_y_cell = int((i + 0.5) * cell_height_px)
 
-            # Get pixel color at center
-            pixel = cast(
+            pixel_rgba = cast(
                 tuple[int, int, int, int],
-                block_img.getpixel((center_x_cell, center_y_cell)),
+                block_image.getpixel((center_x_cell, center_y_cell)),
             )
-            rgb = (pixel[0], pixel[1], pixel[2])
+            pixel_rgb = (pixel_rgba[0], pixel_rgba[1], pixel_rgba[2])
 
-            # Check if it's close to any background color
             is_background = any(
-                color_distance(rgb, bg_color) < BLOCK_COLOR_TOLERANCE
-                for bg_color in BLOCK_BG_COLORS
+                color_distance(pixel_rgb, bg_color) < BLOCK_COLOR_TOLERANCE
+                for bg_color in BLOCK_BACKGROUND_COLORS
             )
+            row_shape.append(0 if is_background else 1)
+        block_shape.append(row_shape)
 
-            if is_background:
-                row.append(0)
-            else:
-                row.append(1)
-        data.append(row)
-
-    return data
+    return block_shape

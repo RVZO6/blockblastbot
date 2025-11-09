@@ -7,7 +7,7 @@ import itertools
 
 @dataclass
 class Placement:
-    """Represents a block placement on the grid."""
+    """Represents placing a single block at a specific grid location."""
 
     block_id: int
     row: int
@@ -16,7 +16,7 @@ class Placement:
 
 @dataclass
 class Solution:
-    """Represents a solution with placements and score."""
+    """Represents a complete solution, including all placements and the outcome."""
 
     placements: list[Placement]
     lines_cleared: int
@@ -27,29 +27,30 @@ def _is_valid_placement(
     grid: list[list[int]], block_shape: list[list[int]], row: int, col: int
 ) -> bool:
     """
-    Check if a block can be placed at the given position.
+    Checks if a block can be placed at a given position without collision or
+    going out of bounds.
 
     Args:
-        grid: Current grid state (0 for empty, 1 for occupied)
-        block_shape: Block shape to place (0 for empty, 1 for piece)
-        row: Starting row position
-        col: Starting column position
+        grid: The current 8x8 grid state.
+        block_shape: The 2D list representing the block's shape.
+        row: The target top row for the placement.
+        col: The target left column for the placement.
 
     Returns:
-        True if placement is valid, False otherwise
+        True if the placement is valid, False otherwise.
     """
     block_height = len(block_shape)
     block_width = len(block_shape[0]) if block_shape else 0
 
-    # Check bounds
+    # Check if the block fits within the grid boundaries.
     if row < 0 or col < 0 or row + block_height > 8 or col + block_width > 8:
         return False
 
-    # Check for collisions
-    for r_offset in range(block_height):
-        for c_offset in range(block_width):
-            if block_shape[r_offset][c_offset] == 1:  # Block has a piece here
-                if grid[row + r_offset][col + c_offset] == 1:  # Grid is occupied
+    # Check for collisions with existing blocks on the grid.
+    for row_offset in range(block_height):
+        for col_offset in range(block_width):
+            if block_shape[row_offset][col_offset] == 1:  # Part of the block
+                if grid[row + row_offset][col + col_offset] == 1:  # Grid is occupied
                     return False
 
     return True
@@ -59,23 +60,25 @@ def _place_block(
     grid: list[list[int]], block_shape: list[list[int]], row: int, col: int
 ) -> list[list[int]]:
     """
-    Place a block on the grid and return the new grid.
+    Places a block on the grid. Does not check for validity.
 
     Args:
-        grid: Current grid state
-        block_shape: Block shape to place
-        row: Starting row position
-        col: Starting column position
+        grid: The current grid state.
+        block_shape: The shape of the block to place.
+        row: The target top row.
+        col: The target left column.
 
     Returns:
-        New grid with block placed
+        A new grid object with the block placed.
     """
     new_grid = deepcopy(grid)
+    block_height = len(block_shape)
+    block_width = len(block_shape[0]) if block_shape else 0
 
-    for r_offset in range(len(block_shape)):
-        for c_offset in range(len(block_shape[0])):
-            if block_shape[r_offset][c_offset] == 1:
-                new_grid[row + r_offset][col + c_offset] = 1
+    for row_offset in range(block_height):
+        for col_offset in range(block_width):
+            if block_shape[row_offset][col_offset] == 1:
+                new_grid[row + row_offset][col + col_offset] = 1
 
     return new_grid
 
@@ -84,30 +87,34 @@ def _calculate_score_and_clear_lines(
     grid: list[list[int]],
 ) -> tuple[int, list[list[int]]]:
     """
-    Clear complete rows and columns from the grid and count them.
+    Calculates the score from clearing lines and returns the resulting grid.
 
     Args:
-        grid: Grid to clear lines from
+        grid: The grid state after placing a block.
 
     Returns:
-        Tuple of (number of lines cleared, new grid with lines cleared)
+        A tuple containing:
+        - The number of lines cleared (rows and columns).
+        - The new grid with the completed lines removed.
     """
     new_grid = deepcopy(grid)
     lines_cleared = 0
 
-    # Clear complete rows
+    # Identify and clear complete rows
     rows_to_clear = [
-        r for r, row in enumerate(new_grid) if all(cell == 1 for cell in row)
+        row_idx for row_idx, row in enumerate(new_grid) if all(cell == 1 for cell in row)
     ]
-    for r in rows_to_clear:
-        new_grid[r] = [0] * 8
+    for row_idx in rows_to_clear:
+        new_grid[row_idx] = [0] * 8
         lines_cleared += 1
 
-    # Clear complete columns
-    cols_to_clear = [c for c in range(8) if all(new_grid[r][c] == 1 for r in range(8))]
-    for c in cols_to_clear:
-        for r in range(8):
-            new_grid[r][c] = 0
+    # Identify and clear complete columns
+    cols_to_clear = [
+        col_idx for col_idx in range(8) if all(new_grid[r][col_idx] == 1 for r in range(8))
+    ]
+    for col_idx in cols_to_clear:
+        for row_idx in range(8):
+            new_grid[row_idx][col_idx] = 0
         lines_cleared += 1
 
     return lines_cleared, new_grid
@@ -115,40 +122,44 @@ def _calculate_score_and_clear_lines(
 
 def _solve_recursively(
     current_grid: list[list[int]],
-    ordered_blocks_with_ids: list[tuple[int, list[list[int]]]],
+    ordered_blocks: list[tuple[int, list[list[int]]]],
 ) -> tuple[int, list[Placement]] | None:
     """
-    Recursively finds the best placements for an ordered list of blocks.
+    Recursively finds the best placement path for a fixed order of blocks.
 
     Args:
         current_grid: The current state of the grid.
-        ordered_blocks_with_ids: A list of (block_id, block_shape) tuples in a specific order.
+        ordered_blocks: A list of (block_id, block_shape) tuples in a specific
+                        order to be placed.
 
     Returns:
-        A tuple of (total_score, list_of_placements) or None if no valid placement
-        for the current block is found.
+        A tuple of (total score, list of placements) for the best path found,
+        or None if a valid placement could not be found for any block.
     """
-    if not ordered_blocks_with_ids:
-        # All blocks placed, calculate final score and return
+    if not ordered_blocks:
+        # Base case: All blocks have been placed.
         final_score, _ = _calculate_score_and_clear_lines(current_grid)
         return final_score, []
 
-    block_id, block_shape = ordered_blocks_with_ids[0]
-    remaining_blocks = ordered_blocks_with_ids[1:]
+    block_id, block_shape = ordered_blocks[0]
+    remaining_blocks = ordered_blocks[1:]
 
     best_score_for_this_path = -1
     best_placements_for_this_path: list[Placement] | None = None
 
-    # Try all possible positions for the current block
-    for r in range(8 - len(block_shape) + 1):
-        for c in range(8 - len(block_shape[0]) + 1):
+    # Iterate through all possible positions for the current block.
+    block_height = len(block_shape)
+    block_width = len(block_shape[0]) if block_shape else 0
+    for r in range(8 - block_height + 1):
+        for c in range(8 - block_width + 1):
             if _is_valid_placement(current_grid, block_shape, r, c):
+                # If valid, place the block and clear any lines.
                 grid_after_placement = _place_block(current_grid, block_shape, r, c)
                 score_from_this_move, grid_after_clear = (
                     _calculate_score_and_clear_lines(grid_after_placement)
                 )
 
-                # Recursively solve for the remaining blocks
+                # Recursively solve for the rest of the blocks.
                 future_result = _solve_recursively(grid_after_clear, remaining_blocks)
 
                 if future_result is not None:
@@ -159,35 +170,48 @@ def _solve_recursively(
 
                     if current_path_total_score > best_score_for_this_path:
                         best_score_for_this_path = current_path_total_score
+                        # Combine this placement with the best future placements.
                         best_placements_for_this_path = [
                             Placement(block_id, r, c)
                         ] + future_placements
 
     if best_placements_for_this_path is None:
-        return None  # No valid placement for the current block in this path
+        return None  # No valid placement path found from this state.
 
     return best_score_for_this_path, best_placements_for_this_path
 
 
-def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution | None:
+def solve(
+    grid: list[list[int]], blocks: dict[int, list[list[int]]]
+) -> Solution | None:
     """
-    Find the best placement of blocks to maximize line clears.
+    Finds the optimal placement of blocks to maximize the number of cleared lines.
 
     This function exhaustively checks every possible order (permutation) of the
     available blocks to find the sequence of placements that yields the highest
-    score, ensuring all blocks are placed.
+    score.
+
+    Args:
+        grid: The current 8x8 grid state.
+        blocks: A dictionary mapping available block IDs to their shapes.
+
+    Returns:
+        A Solution object representing the best possible outcome, or None if
+        no solution allows for all blocks to be placed.
     """
     best_overall_solution: Solution | None = None
     max_overall_lines_cleared = -1
 
     block_ids = list(blocks.keys())
 
-    # Iterate through all permutations of block placement order
-    for p_ids in itertools.permutations(block_ids):
-        ordered_blocks_with_ids = [(block_id, blocks[block_id]) for block_id in p_ids]
+    # Iterate through all permutations of block placement order.
+    for block_id_permutation in itertools.permutations(block_ids):
+        ordered_blocks = [
+            (block_id, blocks[block_id]) for block_id in block_id_permutation
+        ]
 
-        # Find placements for this specific order
-        result = _solve_recursively(grid, ordered_blocks_with_ids)
+        # Find the best placement path for this specific block order.
+        result = _solve_recursively(grid, ordered_blocks)
 
         if result is not None:
             current_lines_cleared, current_placements = result
@@ -195,18 +219,19 @@ def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution
             if current_lines_cleared > max_overall_lines_cleared:
                 max_overall_lines_cleared = current_lines_cleared
 
-                # Apply placements to get the final grid for this solution
-                temp_grid = deepcopy(grid)
+                # To build the final solution, apply the placements to the
+                # original grid to get the final grid state.
+                final_grid_state = deepcopy(grid)
                 for placement in current_placements:
-                    temp_grid = _place_block(
-                        temp_grid,
+                    final_grid_state = _place_block(
+                        final_grid_state,
                         blocks[placement.block_id],
                         placement.row,
                         placement.col,
                     )
 
                 _, final_grid_after_clearing = _calculate_score_and_clear_lines(
-                    temp_grid
+                    final_grid_state
                 )
 
                 best_overall_solution = Solution(
@@ -214,5 +239,6 @@ def solve(grid: list[list[int]], blocks: dict[int, list[list[int]]]) -> Solution
                     lines_cleared=max_overall_lines_cleared,
                     final_grid=final_grid_after_clearing,
                 )
+
     return best_overall_solution
 

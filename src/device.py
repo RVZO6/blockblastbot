@@ -23,7 +23,19 @@ def adb(*args: str) -> bytes:
 
 def swipe(x1: int, y1: int, x2: int, y2: int) -> str:
     """
-    Swipe from (x1, y1) to (x2, y2) with a duration based on distance.
+    Simulates a swipe gesture on the device screen.
+
+    The duration of the swipe is calculated based on the distance between
+    the start and end points.
+
+    Args:
+        x1: The starting X-coordinate in pixels.
+        y1: The starting Y-coordinate in pixels.
+        x2: The ending X-coordinate in pixels.
+        y2: The ending Y-coordinate in pixels.
+
+    Returns:
+        The raw output from the ADB command as a string.
     """
     distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
     # Linearly scale duration: base 100ms, plus 0.1ms per pixel
@@ -45,6 +57,10 @@ def swipe(x1: int, y1: int, x2: int, y2: int) -> str:
 
 
 def screenshot() -> Image.Image:
-    """Take a screenshot and return as PIL Image"""
+    """Take a screenshot and return as PIL Image.
+
+    Returns:
+        A PIL Image object representing the current screen content.
+    """
     data = adb("shell", "screencap", "-p")
     return Image.open(BytesIO(data))
