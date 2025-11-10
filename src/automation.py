@@ -146,8 +146,9 @@ def execute_solution(
     """
     print("Executing solution...")
     try:
-        screenshot = device.screenshot()
-        screen_width, screen_height = screenshot.width, screenshot.height
+        output = device.adb("shell", "wm", "size").decode("utf-8").strip()
+        size_str = output.split(":")[1].strip()  # "1080x2340"
+        screen_width, screen_height = map(int, size_str.split("x"))
     except Exception as e:
         print(f"Error getting screen dimensions: {e}")
         print("Cannot execute solution. Is `adb` connected and a device attached?")
