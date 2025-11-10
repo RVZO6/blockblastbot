@@ -103,32 +103,24 @@ def _calculate_swipe_path_normalized(
         A tuple containing two (x, y) tuples: the normalized start and end
         coordinates for the finger's swipe on the screen.
     """
-    """
-    Applies swipe physics to calculate the finger's swipe path.
-
-    Args:
-        finger_start_normalized: The normalized (x, y) of the finger's start.
-        block_travel_vector_normalized: The (x, y) vector of the block's travel.
-        block_pickup_y_normalized: The normalized y-pos of the block's pickup state.
-
-    Returns:
-        A tuple containing two (x, y) tuples for the swipe start and end
-        in normalized screen coordinates.
-    """
     start_x, start_y = finger_start_normalized
     block_delta_x, block_delta_y = block_travel_vector_normalized
 
     # Calculate Y-axis sensitivity based on the block's vertical start position.
-    y_sensitivity = (
+    y_sensitivity_factor = (
         config.SWIPE_Y_SENSITIVITY_SLOPE * block_pickup_y_normalized
     ) + config.SWIPE_Y_SENSITIVITY_INTERCEPT
+    if y_sensitivity_factor == 0:  # Avoid division by zero
+        y_gain = 1.0
+    else:
+        y_gain = config.GRID_CELL_SIZE_NORMALIZED / y_sensitivity_factor
 
     # X-axis sensitivity is constant.
-    x_sensitivity = config.SWIPE_SENSITIVITY_X
+    x_gain = config.SWIPE_SENSITIVITY_X
 
     # The finger's swipe distance is the block's travel distance divided by sensitivity.
-    finger_delta_x = block_delta_x / x_sensitivity if x_sensitivity != 0 else 0
-    finger_delta_y = block_delta_y / y_sensitivity if y_sensitivity != 0 else 0
+    finger_delta_x = block_delta_x / x_gain if x_gain != 0 else 0
+    finger_delta_y = block_delta_y / y_gain if y_gain != 0 else 0
 
     finger_end_normalized = (start_x + finger_delta_x, start_y + finger_delta_y)
 
