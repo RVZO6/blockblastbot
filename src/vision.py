@@ -22,9 +22,7 @@ from config import (
 )
 
 
-def color_distance(
-    color1: tuple[int, int, int], color2: tuple[int, int, int]
-) -> float:
+def color_distance(color1: tuple[int, int, int], color2: tuple[int, int, int]) -> float:
     """Calculate Euclidean distance between two RGB colors."""
     return math.sqrt(
         (color1[0] - color2[0]) ** 2
@@ -71,7 +69,8 @@ def grid() -> list[list[int]]:
             center_y_px = int((i + 0.5) * cell_size_px)
 
             pixel_rgba = cast(
-                tuple[int, int, int, int], grid_image.getpixel((center_x_px, center_y_px))
+                tuple[int, int, int, int],
+                grid_image.getpixel((center_x_px, center_y_px)),
             )
             pixel_rgb = (pixel_rgba[0], pixel_rgba[1], pixel_rgba[2])
 
@@ -109,7 +108,7 @@ def blocks(indices: list[int] | int) -> dict[int, list[list[int]]]:
         raise ValueError(f"Block index must be in {BLOCK_INDICES}, got {indices}")
 
     # A single screenshot is used to detect all requested blocks for efficiency.
-    screenshot_image = util.screenshot()
+    screenshot_image = device.screenshot()
 
     detected_blocks: dict[int, list[list[int]]] = {}
     for index in indices:
