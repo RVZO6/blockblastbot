@@ -1,12 +1,4 @@
-"""
-Main script for the Block Puzzle Automation tool.
-
-This script orchestrates the vision, solver, and automation modules to play
-the block puzzle game in a continuous loop.
-"""
-
 import time
-
 import src.automation as automation
 import src.vision as vision
 from src.solver import solve
@@ -17,79 +9,86 @@ from config import (
     RETRY_DELAY_NO_SOLUTION,
 )
 
+CLR_RESET = "\033[0m"
+CLR_BOLD = "\033[1m"
+CLR_RED = "\033[91m"
+CLR_GREEN = "\033[92m"
+CLR_YELLOW = "\033[93m"
+CLR_BLUE = "\033[94m"
+CLR_MAGENTA = "\033[95m"
+CLR_CYAN = "\033[96m"
+CLR_GRAY = "\033[90m"
+
 
 def _print_grid(grid: list[list[int]]) -> None:
-    """Prints the 8x8 grid to the console for visualization."""
-    print("Current Grid State:")
+    print(f"{CLR_BOLD}Current Grid State:{CLR_RESET}")
     for row in grid:
-        row_str = " ".join(["■" if cell else "□" for cell in row])
+        row_str = " ".join(
+            [
+                f"{CLR_GREEN}■{CLR_RESET}" if cell else f"{CLR_GRAY}□{CLR_RESET}"
+                for cell in row
+            ]
+        )
         print(f"  {row_str}")
 
 
 def main() -> None:
-    """
-    Defines the main execution loop for the automation tool.
-
-    This function orchestrates the vision, solver, and automation modules
-    to play the block puzzle game in a continuous loop. It handles user
-    interaction for starting the process and gracefully exits on
-    KeyboardInterrupt or unexpected errors.
-    """
-    print("--- Block Puzzle Automation ---")
+    print(f"{CLR_BOLD}{CLR_BLUE}--- Block Puzzle Automation ---{CLR_RESET}")
     print("This script will run in a loop to solve and execute puzzle placements.")
-    print("Press Ctrl+C at any time to stop.")
+    print(f"Press {CLR_BOLD}Ctrl+C{CLR_RESET} at any time to stop.")
 
     try:
-        input("\nPress Enter to begin...")
+        _ = input(f"\nPress {CLR_BOLD}Enter{CLR_RESET} to begin...")
     except KeyboardInterrupt:
-        print("\nExiting.")
+        print(f"\n{CLR_RED}Exiting.{CLR_RESET}")
         return
 
     try:
         cycle_count = 1
         while True:
-            print(f"\n----- Cycle {cycle_count} -----")
+            print(f"\n{CLR_BOLD}{CLR_CYAN}----- Cycle {cycle_count} -----{CLR_RESET}")
 
-            # 1. Vision: Capture the current state of the game.
-            print("🔍 Capturing game state...")
+            print(f"{CLR_CYAN}Capturing game state...{CLR_RESET}")
             current_grid = vision.grid()
             _print_grid(current_grid)
 
             available_blocks = vision.blocks(list(BLOCK_INDICES))
             if not available_blocks:
                 print(
-                    f"\n⚠️ No blocks detected. Retrying in {RETRY_DELAY_NO_BLOCKS} seconds..."
+                    f"\n{CLR_YELLOW}No blocks detected. Retrying in {RETRY_DELAY_NO_BLOCKS} seconds...{CLR_RESET}"
                 )
                 time.sleep(RETRY_DELAY_NO_BLOCKS)
                 continue
-            print(f"  Detected Blocks: {list(available_blocks.keys())}")
+            print(
+                f"  Detected Blocks: {CLR_BOLD}{list(available_blocks.keys())}{CLR_RESET}"
+            )
 
-            # 2. Solver: Find the optimal placement for the available blocks.
-            print("🧠 Solving for optimal placement...")
+            print(f"{CLR_MAGENTA}Solving for optimal placement...{CLR_RESET}")
             solution = solve(current_grid, available_blocks)
 
             if solution is None:
                 print(
-                    f"\n⚠️ No valid solution found. Retrying in {RETRY_DELAY_NO_SOLUTION} seconds..."
+                    f"\n{CLR_YELLOW}No valid solution found. Retrying in {RETRY_DELAY_NO_SOLUTION} seconds...{CLR_RESET}"
                 )
                 time.sleep(RETRY_DELAY_NO_SOLUTION)
                 continue
 
-            print(f"  Solution found! Lines to be cleared: {solution.lines_cleared}")
+            print(
+                f"  {CLR_GREEN}{CLR_BOLD}Solution found! Lines to be cleared: {solution.lines_cleared}{CLR_RESET}"
+            )
 
-            # 3. Automation: Execute the solution by performing swipes.
-            print("🤖 Executing solution...")
+            print(f"{CLR_YELLOW}Executing solution...{CLR_RESET}")
             automation.execute_solution(solution, available_blocks)
-            print("  Execution complete.")
+            print(f"  {CLR_GREEN}Execution complete.{CLR_RESET}")
 
             cycle_count += 1
             print(f"\nWaiting for next cycle... ({DELAY_BETWEEN_CYCLES}s)")
             time.sleep(DELAY_BETWEEN_CYCLES)
 
     except KeyboardInterrupt:
-        print("\n\nLoop stopped by user. Exiting.")
+        print(f"\n\n{CLR_YELLOW}Loop stopped by user. Exiting.{CLR_RESET}")
     except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}")
+        print(f"\n{CLR_RED}An unexpected error occurred: {e}{CLR_RESET}")
         print("Exiting.")
 
 
