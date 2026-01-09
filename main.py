@@ -10,7 +10,12 @@ import time
 import src.automation as automation
 import src.vision as vision
 from src.solver import solve
-from config import BLOCK_INDICES
+from config import (
+    BLOCK_INDICES,
+    DELAY_BETWEEN_CYCLES,
+    RETRY_DELAY_NO_BLOCKS,
+    RETRY_DELAY_NO_SOLUTION,
+)
 
 
 def _print_grid(grid: list[list[int]]) -> None:
@@ -52,8 +57,10 @@ def main() -> None:
 
             available_blocks = vision.blocks(list(BLOCK_INDICES))
             if not available_blocks:
-                print("\n⚠️ No blocks detected. Retrying in 5 seconds...")
-                time.sleep(5)
+                print(
+                    f"\n⚠️ No blocks detected. Retrying in {RETRY_DELAY_NO_BLOCKS} seconds..."
+                )
+                time.sleep(RETRY_DELAY_NO_BLOCKS)
                 continue
             print(f"  Detected Blocks: {list(available_blocks.keys())}")
 
@@ -62,8 +69,10 @@ def main() -> None:
             solution = solve(current_grid, available_blocks)
 
             if solution is None:
-                print("\n⚠️ No valid solution found. Retrying in 5 seconds...")
-                time.sleep(5)
+                print(
+                    f"\n⚠️ No valid solution found. Retrying in {RETRY_DELAY_NO_SOLUTION} seconds..."
+                )
+                time.sleep(RETRY_DELAY_NO_SOLUTION)
                 continue
 
             print(f"  Solution found! Lines to be cleared: {solution.lines_cleared}")
@@ -74,8 +83,8 @@ def main() -> None:
             print("  Execution complete.")
 
             cycle_count += 1
-            print("\nWaiting for next cycle...")
-            time.sleep(0.85)
+            print(f"\nWaiting for next cycle... ({DELAY_BETWEEN_CYCLES}s)")
+            time.sleep(DELAY_BETWEEN_CYCLES)
 
     except KeyboardInterrupt:
         print("\n\nLoop stopped by user. Exiting.")

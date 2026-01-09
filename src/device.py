@@ -3,6 +3,8 @@ from PIL import Image
 from io import BytesIO
 import math
 
+from config import SWIPE_BASE_DURATION_MS, SWIPE_DURATION_PER_PIXEL
+
 
 def adb(*args: str) -> bytes:
     """
@@ -38,8 +40,7 @@ def swipe(x1: int, y1: int, x2: int, y2: int) -> str:
         The raw output from the ADB command as a string.
     """
     distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    # Linearly scale duration: base 100ms, plus 0.1ms per pixel
-    duration_ms = 100 + int(distance * 0.3)
+    duration_ms = SWIPE_BASE_DURATION_MS + int(distance * SWIPE_DURATION_PER_PIXEL)
     return (
         adb(
             "shell",

@@ -7,6 +7,7 @@ import time
 import src.device as device
 from src.solver import Placement, Solution
 import config
+from config import DELAY_BETWEEN_SWIPES, PICKUP_ANCHOR_CENTER_COLS, PICKUP_ANCHOR_ROW
 
 
 def _get_block_dimensions(block_shape: list[list[int]]) -> tuple[int, int]:
@@ -40,17 +41,12 @@ def _get_pickup_anchor_in_grid_units(
     width, height = _get_block_dimensions(block_shape)
 
     # The block is conceptually centered vertically on the bottom edge of the
-    # grid (row 8) when picked up.
-    pickup_row = 8.0 - (height / 2.0)
+    # grid when picked up.
+    pickup_row = PICKUP_ANCHOR_ROW - (height / 2.0)
 
     # The horizontal position depends on which slot the block came from.
     # These values represent the center of the block's bounding box.
-    if block_id == 1:  # Left slot
-        anchor_center_col = 1.5
-    elif block_id == 2:  # Center slot
-        anchor_center_col = 4.0
-    else:  # Right slot
-        anchor_center_col = 6.5
+    anchor_center_col = PICKUP_ANCHOR_CENTER_COLS[block_id]
 
     pickup_col = anchor_center_col - (width / 2.0)
 
@@ -221,4 +217,4 @@ def execute_solution(
             f"  Swiping Block {block_id} ({width}x{height}) to ({placement.row}, {placement.col})..."
         )
         _ = device.swipe(start_x_px, start_y_px, end_x_px, end_y_px)
-        time.sleep(0.05)  # Pause briefly between swipes
+        time.sleep(DELAY_BETWEEN_SWIPES)  # Pause briefly between swipes

@@ -14,7 +14,9 @@ the script to adapt to different screen resolutions.
 # Grid Properties
 # -----------------------------------------------------------------------------
 GRID_SIZE: Final[int] = 8  # The grid is 8x8 cells.
-GRID_CELL_SIZE_NORMALIZED: Final[float] = 0.1102  # Cell size as a fraction of screen width.
+GRID_CELL_SIZE_NORMALIZED: Final[float] = (
+    0.1102  # Cell size as a fraction of screen width.
+)
 
 # The (x, y) position of the top-left corner of the grid, normalized.
 GRID_LEFT_NORMALIZED: Final[float] = 0.0583
@@ -30,7 +32,9 @@ GRID_COLOR_TOLERANCE: Final[int] = 40
 # Block Properties
 # -----------------------------------------------------------------------------
 BLOCK_INDICES: Final[tuple[int, ...]] = (1, 2, 3)  # The three block slots.
-BLOCK_CELL_SIZE_NORMALIZED: Final[float] = 0.05  # Block cell size as a fraction of screen width.
+BLOCK_CELL_SIZE_NORMALIZED: Final[float] = (
+    0.05  # Block cell size as a fraction of screen width.
+)
 BLOCK_COLOR_TOLERANCE: Final[int] = 35  # Color tolerance for detecting block pixels.
 
 # The radius of the Region of Interest (ROI) used to scan for a block,
@@ -41,7 +45,7 @@ BLOCK_ROI_RADIUS_NORMALIZED: Final[float] = 0.15
 # These values were determined empirically from a screenshot.
 BLOCK_CENTERS_NORMALIZED: Final[tuple[tuple[float, float], ...]] = (
     (0.21, 0.756),  # Block 1 (left)
-    (0.5, 0.756),   # Block 2 (center)
+    (0.5, 0.756),  # Block 2 (center)
     (0.79, 0.756),  # Block 3 (right)
 )
 
@@ -74,3 +78,50 @@ SWIPE_SENSITIVITY_X: Final[float] = 1.37
 SWIPE_Y_SENSITIVITY_SLOPE: Final[float] = 0.011
 SWIPE_Y_SENSITIVITY_INTERCEPT: Final[float] = 0.028
 
+
+# -----------------------------------------------------------------------------
+# Timing & Delays
+# -----------------------------------------------------------------------------
+# Delay between consecutive swipe operations (in seconds).
+DELAY_BETWEEN_SWIPES: Final[float] = 0.05
+
+# Delay between automation cycles (in seconds).
+DELAY_BETWEEN_CYCLES: Final[float] = 0.85
+
+# Delay to wait when no blocks are detected (in seconds) before retrying.
+RETRY_DELAY_NO_BLOCKS: Final[float] = 5.0
+
+# Delay to wait when no valid solution is found (in seconds) before retrying.
+RETRY_DELAY_NO_SOLUTION: Final[float] = 5.0
+
+
+# -----------------------------------------------------------------------------
+# Swipe Duration Configuration
+# -----------------------------------------------------------------------------
+# Base duration for a swipe gesture (in milliseconds).
+SWIPE_BASE_DURATION_MS: Final[int] = 100
+
+# Additional milliseconds per pixel of swipe distance.
+SWIPE_DURATION_PER_PIXEL: Final[float] = 0.3
+
+
+# -----------------------------------------------------------------------------
+# Pickup Anchor Positions (in grid units)
+# -----------------------------------------------------------------------------
+# When a block is "picked up" from the selection area, it's conceptually
+# positioned below the grid. These values define where each block appears
+# when picked up, measured in grid cell units.
+
+# The horizontal center position of each block slot in grid units.
+# Block 1 (left): center at column 1.5
+# Block 2 (center): center at column 4.0
+# Block 3 (right): center at column 6.5
+PICKUP_ANCHOR_CENTER_COLS: Final[dict[int, float]] = {
+    1: 1.5,
+    2: 4.0,
+    3: 6.5,
+}
+
+# The vertical position where blocks appear when picked up, measured in grid units.
+# The grid has 8 rows (0-7), so row 8.0 is just below the grid.
+PICKUP_ANCHOR_ROW: Final[float] = 8.0
